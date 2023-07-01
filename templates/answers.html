@@ -1,0 +1,54 @@
+<html>
+<head>
+    <title>Quiz</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 30%;
+            border: 2px solid;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .table-container {
+            text-align: -webkit-center;
+        }
+
+        p {
+            text-align: center;
+            font-size: 35px;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <!-- <h1>Results</h1> -->
+    <p>Score: {{ score }} %</p>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>User Answer</th>
+                    <th>Actual Answer</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for answer in answers %}
+                <tr>
+                    <td>{{ answer[2] }}</td>
+                    <td>{{ answer[3] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

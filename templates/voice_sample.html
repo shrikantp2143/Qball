@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+	<style>
+		h1 {
+			text-align: center;
+			font-size: 24px;
+			font-weight: bold;
+			margin-bottom: 20px;
+		}
+		
+		body {
+			background: linear-gradient(to bottom, #f5f7fa, #c3cfe2);
+		}
+	</style>
+</head>
+<body>
+	<h3 id="userName"></h3>
+	<div>
+		<h4>This is voice sample collection for voice recognization, Please click on 'start recording' button to capture your voice for recognization</h4>
+		<button type="button" onclick="startRecordingVoice()" id="recordingButton">start recording</button>
+	</div>
+
+	<div>
+		<p id="voice-sample-content">Hii, My self .... I'm from ... city, Which is mainly known for chaddar industrie.<br> I did my graduation from ... university. And after that i joined organization called Mindnerves Tech. <br>It's been 3 years im working on this organization. during this worked couple of project's like DEF [Dell Enterprise Framework] from Dell Technologies<br> </p>
+	</div>
+	<form id="dashboard-form" method="post">
+		<input type="hidden" name="user_id" id="userId">
+	</form>	
+	<script>
+		var userName = '{{ user_name }}';
+		var userId = '{{user_id}}'
+		console.log(userName)
+		document.getElementById("userName").textContent = "Hello " + userName;
+
+		function startRecordingVoice() {
+			document.getElementById("recordingButton").textContent = "Listning...";
+			const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/record_voice', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                    // Handle the response if needed
+                    // After saving the answer, proceed to the next question
+                    // showNextQuestion();
+					console.log(xhr);
+
+					var form = document.getElementById('dashboard-form');
+
+                    // Submit the form
+                    form.action = "/redirect_dashboard";
+                    var userId = document.getElementById('userId');
+                    userId.value = userId;
+                    form.submit();
+                }
+            };
+
+            // Prepare the data to send
+            const data = {
+                userId: userId,
+				user_name: userName
+            };
+
+            // Convert the data to JSON and send the request
+            xhr.send(JSON.stringify(data));
+			setTimeout(() => {
+				document.getElementById("recordingButton").textContent = "recording stopped";
+			}, 100000);
+		}
+	</script>
+</body>
+</html>

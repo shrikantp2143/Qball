@@ -1,0 +1,180 @@
+<html>
+<head>
+    <title>Quiz</title>
+    <style>
+        /* Add your custom CSS styles for the quiz template */
+        .question-block {
+            text-align: -webkit-center;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="margin-left: 3rem; margin-top: 2rem;">Quiz</h1>
+
+    <form action="/quiz" method="post">
+        {% for question in questions %}
+        <div class="question-block" id="question{{ loop.index }}" {% if loop.index != 1 %}style="display: none;"{% endif %}>
+            <h2 style="font-size: 2rem;" id="question">{{ question[4] }}</h2>
+            <button type="button" id="play-question{{loop.index}}" onclick="playQuestion('{{question[4]}}')">Play Question</button>
+            
+            <br><br>
+            <button type="button" id="microphone-button{{loop.index}}" onclick="startListening({{loop.index}})">Start Microphone</button>
+            <p id='recognized-text{{loop.index}}'></p>
+           <button type="button" onclick="saveAnswerAndNextQuestion('{{ question[0] }}', '{{loop.index}}')">Next Question</button>
+        </div>
+        
+       
+        {% endfor %}
+        <button type="submit" id="submitButton" style="display: none;">Submit Quiz</button>
+    </form>
+
+    <script>
+        let currentQuestion = 1;
+        var questionText = document.getElementById("question").textContent
+        console.log(questionText)
+        var speech1 = new SpeechSynthesisUtterance();
+        speech1.text = questionText;
+        speech1.voice = speechSynthesis.getVoices()[0];
+
+        // Set the speed of the voice
+        speech1.rate = 1.0; // Adjust the rate as desired
+
+        speechSynthesis.speak(speech1);
+        var counter = 4;
+
+        
+        const totalQuestions = {{ questions|length }}
+        var microphoneIcon = document.getElementById("microphoneIcon");
+
+        let isListening = false;
+
+        function playQuestion(questionText) {
+            console.log("Calledd");
+            var speech = new SpeechSynthesisUtterance();
+            speech.text = questionText;
+            speech.voice = speechSynthesis.getVoices()[0];
+
+            // Set the speed of the voice
+            speech.rate = 1.0; // Adjust the rate as desired
+
+            speechSynthesis.speak(speech);
+        }
+
+        let recognition;
+
+        function startListening(indexNumber) {
+            currentQuestion = indexNumber;
+            console.log("Loop Index :", indexNumber);
+            counter = 4;
+            if (!isListening) {
+                recognition = new webkitSpeechRecognition();
+                recognition.lang = 'en-IN';
+
+                recognition.onresult = function(event) {
+                    const result = event.results[event.results.length - 1][0].transcript;
+                    console.log(result);
+                    document.getElementById('recognized-text'+indexNumber).style.display = 'block';
+                    document.getElementById('recognized-text'+indexNumber).textContent = result;
+                };
+
+                recognition.start();
+                isListening = true;
+                document.getElementById('microphone-button'+indexNumber).textContent = "Stop Mircophone";
+                if(counter>=0) {
+                    countdownInterval = setInterval(updateCountdown, 1000);
+                }
+            } else {
+                stopListening();
+                document.getElementById('microphone-button'+indexNumber).textContent = "Start Microphone";
+            }
+        }
+
+        function stopListening() {
+            recognition.stop();
+            isListening = false;
+        }
+
+        function showNextQuestion(indexNumber) {
+            const currentQuestionDiv = document.getElementById('question' + currentQuestion);
+            document.getElementById('microphone-button'+currentQuestion).textContent = "Start Microphone";
+            var nextQuestionNumber = parseInt(indexNumber) + 1;
+            if(nextQuestionNumber<=totalQuestions) {
+                document.getElementById('play-question'+nextQuestionNumber).click();
+            }
+            
+            // Save the answer of the current question
+            // saveAnswer(currentQuestion, currentAnswer);
+            
+            // Hide the current question
+            currentQuestionDiv.style.display = 'none';
+            
+            if (currentQuestion < totalQuestions) {
+                // Move to the next question
+                currentQuestion++;
+                
+                // Show the next question
+                const nextQuestionDiv = document.getElementById('question' + currentQuestion);
+                nextQuestionDiv.style.display = 'block';
+            } else if (currentQuestion === totalQuestions) {
+                // Show the submit button on the last question
+                document.getElementById('submitButton').style.display = 'block';
+            }
+        }
+        
+        function saveAnswerAndNextQuestion(questionId, indexNumber) {
+            const answer = document.getElementById('recognized-text'+currentQuestion).textContent;
+            if(answer.length > 0) {
+                // Make an AJAX request to the server to save the answer
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', '/save_answer', true);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                        // Handle the response if needed
+                        // After saving the answer, proceed to the next question
+                        // currentQuestion++;
+                        showNextQuestion(indexNumber);
+                    }
+                };
+
+                // Prepare the data to send
+                const data = {
+                    questionId: questionId,
+                    answer: answer,
+                    userId: 9,
+                };
+
+                // Convert the data to JSON and send the request
+                xhr.send(JSON.stringify(data));
+            } else {
+                speech1.text = "No answer has been selected";
+                speech1.voice = speechSynthesis.getVoices()[0];
+
+                // Set the speed of the voice
+                speech1.rate = 1.0; // Adjust the rate as desired
+
+                speechSynthesis.speak(speech1);
+            }
+        }
+
+        function updateCountdown() {
+        // Update the countdown element with the current counter value
+            document.getElementById('microphone-button'+currentQuestion).textContent = "Listning...";
+            // Decrement the counter
+            counter--;
+
+            // Check if the counter has reached 0
+            if (counter < 0) {
+                // Clear the interval when the countdown is finished
+                clearInterval(countdownInterval);
+                stopListening();
+                document.getElementById('microphone-button'+currentQuestion).textContent = "Microphone stopped";
+                setTimeout(() => {
+                    document.getElementById('microphone-button'+currentQuestion).textContent = "Start Microphone";
+                }, 1000);
+            } 
+        }
+
+    </script>
+</body>
+</html>
